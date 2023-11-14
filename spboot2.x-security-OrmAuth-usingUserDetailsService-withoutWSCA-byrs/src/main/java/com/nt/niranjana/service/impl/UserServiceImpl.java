@@ -54,7 +54,7 @@ public class UserServiceImpl implements UserService, UserDetailsService{
 		{
 			User user =  opt.get();
 			//if opt is not empty then we are fetching Developer entity  User details and handover to loadUserByUsername() of UserDetails(I).
-			//UserDetails(I) impl method will be takecare of our entity class object and used for spring security. 
+			//UserDetails(I) impl method will be take care of our entity class object and used for spring security. 
 			//because spring security takes entity class from loadUserByUsername of UserDetails(I) and convert into Security and given to authentication provider
 			
 			//two ways we can fetch and insert developer entity class object to loadUserByUsername() i.e using for-loop or single line stream()

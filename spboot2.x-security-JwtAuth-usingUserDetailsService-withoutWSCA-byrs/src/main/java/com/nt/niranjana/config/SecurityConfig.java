@@ -8,31 +8,36 @@ import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import com.nt.niranjana.filter.SecurityFilter;
 
 @Configuration
 @EnableWebSecurity
-public class SecurityConfig {
+public class SecurityConfig 
+{
+
+	@Autowired
+	private UserDetailsService userDetailsService;
 	
 	@Autowired
 	private BCryptPasswordEncoder passwordEncoder;
 	
 	@Autowired
-	private UserDetailsService userDetailsService;
+	private AuthenticationEntryPoint authenticationEntryPoint;
 	
-	//old
-	/*
-	void configure(AuthenticationManagerBuilder auth) throws Exception {
-		auth.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder);
-	}*/
-
-	//new code--starts
+	@Autowired
+	private SecurityFilter securityFilter;
+	
 	@Bean
-	public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception 
+	public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception 
 	{
-		return authConfig.getAuthenticationManager();
+		return configuration.getAuthenticationManager();
 	}
 	
 	@Bean
@@ -43,21 +48,22 @@ public class SecurityConfig {
 		provider.setUserDetailsService(userDetailsService);
 		return provider;
 	}
-	//new code ends
 	
 	@Bean
-	public SecurityFilterChain configureAuth(HttpSecurity http) throws Exception 
+	public SecurityFilterChain configureAuth(HttpSecurity http) throws Exception
 	{
-		http.authorizeHttpRequests(request->request.antMatchers("/home","/","/user/**").permitAll()
-										.antMatchers("/admin").hasAuthority("ADMIN")
-										//.antMatchers("/**").hasAuthority("ADMIN") //ADMIN CAN ACCESS EVERY URL
-										.antMatchers("/customer").hasAuthority("CUSTOMER")
-										.anyRequest().authenticated()
-								).formLogin(form->form.loginPage("/login").permitAll().defaultSuccessUrl("/hellouser", true))
-		.logout(logout->logout.permitAll())	;
+		http.csrf().disable()
+		.authorizeRequests().antMatchers("/user/create","/user/login","/user/tokenDetails").permitAll()
+		.anyRequest().authenticated()
+		.and()
+		.exceptionHandling()
+		.authenticationEntryPoint(authenticationEntryPoint)
+		.and()
+		.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+		.and()
+		.addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class);
+		
 		return http.build();
 	}
 	
-
-
 }
